@@ -1,0 +1,33 @@
+.logo {
+	height: 70px;
+}
+
+.icon {
+  width: 24px;
+}
+
+.btn-sm {
+  .icon {
+    width: 16px;
+  }
+}
+
+tr {
+  td:last-of-type {
+    text-align: right;
+  }
+}
+
+.autocomplete {
+  position: relative;
+
+  .dropdown-menu li {
+    display: block;
+    cursor: pointer;
+    padding: 5px 15px;
+
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.1);
+    }
+  }
+}
