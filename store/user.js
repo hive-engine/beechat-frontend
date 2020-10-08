@@ -10,7 +10,8 @@ export const state = () => ({
   blocked: [],
   friend_requests: [],
   settings: {},
-  channels: []
+  channels: [],
+  sessions: []
 })
 
 export const getters = {
@@ -21,7 +22,8 @@ export const getters = {
   blocked: state => state.blocked,
   friend_requests: state => state.friend_requests,
   settings: state => state.settings,
-  channels: state => state.channels
+  channels: state => state.channels,
+  sessions: state => state.sessions
 }
 
 export const mutations = {
@@ -120,6 +122,10 @@ export const mutations = {
 
   SET_CHANNEL (state, data) {
     state.channels = [data, ...state.channels]
+  },
+
+  SET_SESSIONS (state, data) {
+    state.sessions = data
   }
 }
 
@@ -243,7 +249,11 @@ export const actions = {
   },
 
   authenticateWebsocket ({ dispatch }, payload = {}) {
-    dispatch('wsSendMessage', { type: 'authenticate', payload }, { root: true })
+    try {
+      dispatch('wsSendMessage', { type: 'authenticate', payload }, { root: true })
+    } catch {
+      //
+    }
   },
 
   async fetchFriends ({ commit }) {
@@ -304,6 +314,30 @@ export const actions = {
       const channel = await this.$API.post('users/channels', data)
 
       commit('SET_CHANNEL', channel)
+    } catch (e) {
+      //
+    }
+  },
+
+  async fetchSessions ({ commit }, data) {
+    try {
+      const sessions = await this.$API.call('users/sessions', data)
+
+      commit('SET_SESSIONS', sessions)
+    } catch (e) {
+      //
+    }
+  },
+
+  async revokeSession ({ state, commit }, data) {
+    try {
+      const revoke = await this.$API.post('users/revoke-session', data)
+
+      if (revoke.success) {
+        const sessions = state.sessions.filter(session => session.id !== data.id)
+
+        commit('SET_SESSIONS', sessions)
+      }
     } catch (e) {
       //
     }

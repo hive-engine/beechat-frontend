@@ -38,6 +38,39 @@
       :items="channels"
       :fields="channelFields"
     />
+
+    <h2 class="h4 mt-5">
+      Active Sessions
+    </h2>
+    <hr>
+
+    <b-table
+      class="mt-5 mb-5"
+      show-empty
+      responsive=""
+      striped
+      :items="sessions"
+      :fields="sessionFields"
+    >
+      <template v-slot:cell(id)="data">
+        {{ data.item.browser }}<br>
+        {{ data.item.ip }}<br>
+        {{ data.item.city }} {{ data.item.country }}
+      </template>
+
+      <template v-slot:cell(created_at)="data">
+        {{ new Date(data.item.created_at).toLocaleString() }}
+      </template>
+
+      <template v-slot:cell(actions)="data">
+        <b-button
+          variant="warning"
+          @click.prevent="revokeSession({ id: data.item.id })"
+        >
+          Revoke
+        </b-button>
+      </template>
+    </b-table>
   </div>
 </template>
 
@@ -52,7 +85,8 @@ export default {
   async fetch () {
     await Promise.all([
       this.fetchSettings(),
-      this.fetchChannels()
+      this.fetchChannels(),
+      this.fetchSessions()
     ])
 
     if (this.settings) {
@@ -68,16 +102,21 @@ export default {
         { key: 'id', label: 'ID' },
         { key: 'name', label: 'CHANNEL NAME' },
         { key: 'actions', label: '' }
+      ],
+      sessionFields: [
+        { key: 'id', label: 'SESSION' },
+        { key: 'created_at', label: 'DATE' },
+        { key: 'actions', label: '' }
       ]
     }
   },
 
   computed: {
-    ...mapGetters('user', ['settings', 'channels'])
+    ...mapGetters('user', ['settings', 'channels', 'sessions'])
   },
 
   methods: {
-    ...mapActions('user', ['fetchSettings', 'saveSettings', 'fetchChannels', 'createChannel']),
+    ...mapActions('user', ['fetchSettings', 'saveSettings', 'fetchChannels', 'createChannel', 'fetchSessions', 'revokeSession']),
 
     async saveUserSettings () {
       await this.saveSettings({ dm: { only_from_friends: this.acceptDM } })
