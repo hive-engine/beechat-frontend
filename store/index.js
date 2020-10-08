@@ -16,13 +16,11 @@ export const getters = {
 
 export const mutations = {
   SOCKET_ONOPEN (state, event) {
-    console.log(event)
-
     Vue.prototype.$socket = event.currentTarget
     state.socket.isConnected = true
 
     if (this.state.user.authenticated) {
-      this.dispatch('user/authenticateWebsocket', { username: this.state.user.username, token: this.state.user.ws_token })
+      this.dispatch('user/authenticateWebsocket', { token: this.state.user.token })
     }
   },
 

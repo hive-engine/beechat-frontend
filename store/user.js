@@ -2,7 +2,7 @@ import { PrivateKey, cryptoUtils } from '@/services/hive'
 
 export const state = () => ({
   username: '',
-  ws_token: '',
+  token: null,
   authenticated: false,
   smartlock: false,
   online: false,
@@ -28,11 +28,14 @@ export const mutations = {
   SET_USER (state, data) {
     state.username = data.username
     state.authenticated = data.authenticated
-    state.ws_token = data.ws_token
 
     if (data.smartlock !== undefined) {
       state.smartlock = data.smartlock
     }
+  },
+
+  SET_TOKEN (state, data) {
+    state.token = data
   },
 
   SET_ONLINE (state, data) {
@@ -134,9 +137,7 @@ export const actions = {
           const data = await this.$API.call('users/login', { username, ts, sig: r.result })
 
           if (data) {
-            commit('SET_USER', { username, ws_token: data.ws_token, authenticated: true, smartlock: false })
-
-            dispatch('userLoggedIn', { ...data, redirect })
+            dispatch('userLoggedIn', { ...data, smartlock: false, redirect })
           }
         }
       })
@@ -146,7 +147,13 @@ export const actions = {
   },
 
   async loginWithKey ({ commit, dispatch }, { username, wif, redirect = null }) {
-    if (!username || !wif) { return }
+    if (!username) { return }
+
+    if (!wif) {
+      wif = localStorage.getItem(`smartlock-${username}`)
+    }
+
+    if (!wif) { return }
 
     try {
       const ts = Date.now()
@@ -157,33 +164,25 @@ export const actions = {
       const data = await this.$API.call('users/login', { username, ts, sig })
 
       if (data) {
-        commit('SET_USER', { username, ws_token: data.ws_token, authenticated: true, smartlock: true })
-
-        dispatch('userLoggedIn', { ...data, redirect })
+        dispatch('userLoggedIn', { ...data, smartlock: true, redirect })
       }
     } catch (e) {
       console.error(e.message)
     }
   },
 
-  async loginVerify ({ commit, dispatch }, redirect) {
-    try {
-      const data = await this.$API.call('users/verify')
+  userLoggedIn ({ state, commit, dispatch, rootState }, data) {
+    const { username, smartlock } = data
 
-      commit('SET_USER', { username: data.username, ws_token: data.ws_token, authenticated: true, smartlock: false })
+    commit('SET_USER', { username, authenticated: true, smartlock })
 
-      dispatch('userLoggedIn', { ...data, redirect })
-    } catch {
-      //
+    if (data.token) {
+      commit('SET_TOKEN', data.token)
     }
-  },
 
-  authenticateWebsocket ({ dispatch }, payload = {}) {
-    dispatch('wsSendMessage', { type: 'authenticate', payload }, { root: true })
-  },
-
-  userLoggedIn ({ dispatch, rootState }, data) {
-    localStorage.setItem('username', data.username)
+    if (data.refresh_token) {
+      localStorage.setItem('refresh_token', data.refresh_token)
+    }
 
     if (data.redirect && data.redirect !== '') {
       this.$router.push(data.redirect)
@@ -195,30 +194,56 @@ export const actions = {
       console.log('Already connected to the socket')
     }
 
-    dispatch('authenticateWebsocket')
+    let token = data.token
+
+    if (!token) { token = state.token }
+
+    dispatch('authenticateWebsocket', { token })
   },
 
-  async logout ({ commit }) {
-    localStorage.removeItem('username')
+  async loginVerify ({ commit, dispatch }, redirect) {
+    try {
+      const data = await this.$API.call('users/verify')
+
+      dispatch('userLoggedIn', { ...data, redirect })
+    } catch {
+      //
+    }
+  },
+
+  async refreshToken ({ state, commit, dispatch }) {
+    try {
+      const data = await this.$API.call('users/refresh-token')
+
+      commit('SET_TOKEN', data.token)
+
+      dispatch('authenticateWebsocket', { token: data.token })
+    } catch {
+      if (state.username && state.username !== '') {
+        if (state.smartlock) {
+          dispatch('loginWithKey', { username: state.username })
+        } else {
+          dispatch('login', { username: state.username })
+        }
+      } else {
+        this.$router.app.$root.$bvModal.show('loginModal')
+      }
+    }
+  },
+
+  logout ({ commit }) {
     localStorage.removeItem(`smartlock-${state.username}`)
 
     commit('SET_USER', { username: '', authenticated: false, smartlock: false })
-
-    await this.$API.call('users/logout')
+    commit('SET_TOKEN', null)
 
     this.$websocket.$disconnect()
 
     this.$router.push('/')
   },
 
-  async refreshToken ({ dispatch }) {
-    try {
-      await this.$API.call('users/refresh-token')
-
-      dispatch('authenticateWebsocket')
-    } catch (e) {
-      //
-    }
+  authenticateWebsocket ({ dispatch }, payload = {}) {
+    dispatch('wsSendMessage', { type: 'authenticate', payload }, { root: true })
   },
 
   async fetchFriends ({ commit }) {
