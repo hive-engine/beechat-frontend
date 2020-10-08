@@ -218,7 +218,7 @@
                     :class="
                       message.from === username ? 'bg-primary' : 'bg-secondary'
                     "
-                    v-html="message.content"
+                    v-html="processMessage(message.content)"
                   />
                   <div class="text-muted small pl-1">
                     {{
@@ -278,7 +278,8 @@
             <div class="message-box">
               <div class="textarea-emoji-picker">
                 <emoji-picker
-                  v-show="showEmojiPicker"
+                  v-if="showEmojiPicker"
+                  v-click-outside="clickedOutside"
                   emoji="kiss"
                   :show-skin-tones="false"
                   title="beeChat"
@@ -324,14 +325,25 @@
 
 <script>
 import { mapGetters, mapActions } from 'vuex'
+import { EmojiIndex } from 'emoji-mart-vue-fast'
+import vClickOutside from 'v-click-outside'
+import emojiRegex from 'emoji-regex'
+import emojiData from 'emoji-mart-vue-fast/data/twitter.json'
 import Loading from '@/components/Loading.vue'
 import CreateConversationModal from '@/components/modals/CreateConversation.vue'
 import RenameConversationModal from '@/components/modals/RenameConversation.vue'
 import ManageMembersModal from '@/components/modals/ManageMembers.vue'
 import EmojiPicker from '@/components/emoji/Picker.vue'
 
+const unicodeEmojiRegex = emojiRegex()
+const emojiIndex = new EmojiIndex(emojiData)
+
 export default {
   name: 'Chats',
+
+  directives: {
+    clickOutside: vClickOutside.directive
+  },
 
   middleware: 'authenticated',
 
@@ -509,6 +521,8 @@ export default {
       this.$nextTick(() => {
         textarea.selectionEnd = cursorPosition + emoji.native.length
       })
+
+      this.showEmojiPicker = false
     },
 
     toggleEmojiPicker () {
@@ -535,6 +549,32 @@ export default {
 
     requestDelete (payload) {
       this.broadcastMessage({ type: 'delete-message', payload })
+    },
+
+    clickedOutside () {
+      if (this.showEmojiPicker) {
+        this.showEmojiPicker = false
+      }
+    },
+
+    processMessage (text) {
+      const self = this
+
+      return text.replace(unicodeEmojiRegex, function (match, offset) {
+        const emoji = emojiIndex.nativeEmoji(match)
+
+        if (!emoji) {
+          return match
+        }
+
+        return self.emojiToHtml(emoji)
+      })
+    },
+
+    emojiToHtml (emoji) {
+      const style = `height: 25px; width:25px; background-position: ${emoji.getPosition()}`
+
+      return `<img alt="${emoji.colons}"  title="${emoji.name}" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" class='emoji-set-twitter emoji-type-image' style="${style}">`
     }
   }
 }
