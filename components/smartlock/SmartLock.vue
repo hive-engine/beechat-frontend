@@ -1,9 +1,17 @@
 <template>
   <div class="smartLock">
     <b-modal id="smartLock" title="SmartLock" hide-footer centered>
-      <b-row v-if="Object.keys(smartLockAccounts).length >0" class="mb-3">
-        <b-col v-for="(account,i) in Object.keys(smartLockAccounts)" :key="i" md="6" class="mb-2">
-          <div class="account-link bg-light" @click.prevent="unlockAccount(account)">
+      <b-row v-if="Object.keys(smartLockAccounts).length > 0" class="mb-3">
+        <b-col
+          v-for="(account, i) in Object.keys(smartLockAccounts)"
+          :key="i"
+          md="6"
+          class="mb-2"
+        >
+          <div
+            class="account-link bg-light"
+            @click.prevent="unlockAccount(account)"
+          >
             <b-avatar
               :src="`https://images.hive.blog/u/${account}/avatar`"
               variant="light"
@@ -23,7 +31,9 @@
 
       <b-card no-body class="bg-light text-muted">
         <ul class="p-3 pl-4 m-0">
-          <li>Account names and corresponding keys are stored in your browser</li>
+          <li>
+            Account names and corresponding keys are stored in your browser
+          </li>
           <li>Keys are never sent over any network</li>
           <li>Keys are encrypted and usable only when unlocked via PIN CODE</li>
         </ul>
@@ -52,25 +62,40 @@
         <b-form-input v-model="username" trim />
       </b-form-group>
 
-      <b-form-group label="Hive Private Active Key">
+      <b-form-group label="Hive Private Posting Key">
         <b-form-input v-model="key" type="password" trim />
       </b-form-group>
 
       <b-form-group label="Password">
         <div class="text-center">
-          <PincodeInput v-model="password" :length="5" :secure="true" placeholder="0" />
+          <PincodeInput
+            v-model="password"
+            :length="5"
+            :secure="true"
+            placeholder="0"
+          />
         </div>
       </b-form-group>
 
       <b-form-group label="Confirm Password">
         <div class="text-center">
-          <PincodeInput v-model="cpassword" :length="5" :secure="true" placeholder="0" />
+          <PincodeInput
+            v-model="cpassword"
+            :length="5"
+            :secure="true"
+            placeholder="0"
+          />
         </div>
       </b-form-group>
 
       <b-button
         variant="info"
-        :disabled="username.length < 3 || !key || password.length < 5 || cpassword.length < 5"
+        :disabled="
+          username.length < 3 ||
+            !key ||
+            password.length < 5 ||
+            cpassword.length < 5
+        "
         @click.prevent="addAccount"
       >
         <span
@@ -78,7 +103,8 @@
           class="spinner-border spinner-border-sm"
           role="status"
           aria-hidden="true"
-        /> Add Account
+        />
+        Add Account
       </b-button>
     </b-modal>
 
@@ -108,7 +134,12 @@
         </div>
 
         <b-form-group label="Password" class="mt-3">
-          <PincodeInput v-model="unlockingPassword" :length="5" :secure="true" placeholder="0" />
+          <PincodeInput
+            v-model="unlockingPassword"
+            :length="5"
+            :secure="true"
+            placeholder="0"
+          />
         </b-form-group>
 
         <b-button variant="info" class="mt-3" @click.prevent="unlockAccount()">
@@ -117,7 +148,8 @@
             class="spinner-border spinner-border-sm"
             role="status"
             aria-hidden="true"
-          /> Unlock Account
+          />
+          Unlock Account
         </b-button>
       </div>
     </b-modal>
@@ -147,7 +179,7 @@ export default {
     return {
       username: '',
       key: '',
-      keyType: 'active',
+      keyType: 'posting',
       password: '',
       cpassword: '',
       keySize: 256,
@@ -219,7 +251,7 @@ export default {
 
             const account = this.smartLockAccounts[this.username] || {}
 
-            account.active = encryptedKey
+            account.posting = encryptedKey
 
             localStorage.setItem(`${this.prefix}-accounts`, JSON.stringify({ ...this.smartLockAccounts, [this.username]: account }))
 
@@ -259,7 +291,7 @@ export default {
 
           const account = this.smartLockAccounts[this.unlockingAccount]
 
-          const decryptedKey = await this.decrypt(account.active, this.unlockingPassword)
+          const decryptedKey = await this.decrypt(account.posting, this.unlockingPassword)
 
           localStorage.setItem(`${this.prefix}-${this.unlockingAccount}`, btoa(decryptedKey))
 
