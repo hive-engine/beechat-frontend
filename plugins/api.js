@@ -32,26 +32,13 @@ export default ({ app, store, $config }, inject) => {
 
     let successful = false
 
-    if (error.config.url === '/users/verify' && error.config.url !== '/users/refresh-token') {
+    if (error.config.url !== '/users/refresh-token') {
       try {
         console.log('Refreshing token...')
 
         await store.dispatch('user/refreshToken', { root: true })
 
         error.config.headers.Authorization = store.state.user.token
-        successful = true
-      } catch {
-        console.log('hit')
-        successful = false
-        Promise.reject(error)
-      }
-    }
-
-    if (error.config.url !== '/users/verify' && error.config.url !== '/users/refresh-token') {
-      try {
-        console.log('Verifying token...')
-
-        await store.dispatch('user/loginVerify', { root: true })
         successful = true
       } catch {
         successful = false

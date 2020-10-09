@@ -237,7 +237,10 @@ export const actions = {
     }
   },
 
-  logout ({ commit }) {
+  async logout ({ commit }) {
+    await this.$API.call('users/logout')
+
+    localStorage.removeItem('refresh_token')
     localStorage.removeItem(`smartlock-${state.username}`)
 
     commit('SET_USER', { username: '', authenticated: false, smartlock: false })

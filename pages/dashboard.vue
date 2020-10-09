@@ -53,7 +53,11 @@
       :fields="sessionFields"
     >
       <template v-slot:cell(id)="data">
-        {{ data.item.browser }}<br>
+        {{ data.item.browser }}
+        <span
+          v-if="data.item.current"
+          class="text-success"
+        >({{ data.item.current ? "Current" : "" }})</span><br>
         {{ data.item.ip }}<br>
         {{ data.item.city }} {{ data.item.country }}
       </template>

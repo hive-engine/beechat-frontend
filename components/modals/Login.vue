@@ -4,7 +4,11 @@
       <template v-slot:default>
         <div class="pt-md-3 pb-md-3 pr-md-5 pl-md-5">
           <div class="form-group">
-            <b-form-input v-model="username" placeholder="Hive username" @keyup.enter="logMeIn" />
+            <b-form-input
+              v-model="username"
+              placeholder="Hive username"
+              @keyup.enter="logMeIn"
+            />
           </div>
 
           <div class="text-center">
@@ -59,7 +63,7 @@ export default {
     try {
       const redirect = (this.$route.query.redirect) ? this.$route.query.redirect : undefined
 
-      await this.loginVerify(redirect)
+      await this.refreshToken(redirect)
     } catch (e) {
       console.log(e)
     }
@@ -72,7 +76,7 @@ export default {
   },
 
   methods: {
-    ...mapActions('user', ['login', 'logout', 'loginWithKey', 'loginVerify']),
+    ...mapActions('user', ['login', 'logout', 'loginWithKey', 'refreshToken']),
 
     async logMeIn () {
       if (window.hive_keychain) {
