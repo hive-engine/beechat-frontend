@@ -13,7 +13,7 @@
   "dependencies": {
     "@hiveio/dhive": "^0.14.1",
     "@nuxtjs/pwa": "^3.0.2",
-    "axios": "^0.20.0",
+    "axios": "^0.21.1",
     "bootstrap": "^4.5.2",
     "bootstrap-vue": "^2.17.0",
     "emoji-mart-vue-fast": "^7.0.4",
